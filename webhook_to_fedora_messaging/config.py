@@ -35,7 +35,8 @@ class DBModel(BaseModel):
 
 
 class OIDCModel(BaseModel):
-    provider_url: str = "https://id.fedoraproject.org/openidc"
+    provider_url: str = "https://id.stg.fedoraproject.org/openidc"
+    # provider_url: str = "https://id.fedoraproject.org/openidc"
     client_id: str = "w2fm"
     scopes: str = " ".join(
         [

@@ -7,6 +7,8 @@ The values for any configuration variable that was not mentioned of in the
 custom configuration file will be inherently taken from the default values
 """
 
+import os
+
 import importlib.metadata
 import logging
 from collections.abc import AsyncGenerator
@@ -15,14 +17,15 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 from .cache import configure_cache
 from .config import get_config
 from .database import get_db_manager
-from .endpoints import message, service, user
+from .endpoints import frontend, message, service, user
 from .fasjson import get_fasjson
 
 
@@ -85,9 +88,12 @@ def create_app() -> FastAPI:
     app.include_router(service.router, prefix=PREFIX)
     app.include_router(message.router, prefix=PREFIX)
 
-    async def _redirect_to_docs(request: Request) -> RedirectResponse:
-        return RedirectResponse(app.docs_url or "/docs")
+    # Static files (must come before catch-all frontend router)
+    frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+    app.mount("/imgs", StaticFiles(directory=os.path.join(frontend_path, "imgs")), name="imgs")
 
-    app.add_route("/", _redirect_to_docs, include_in_schema=False)
+    # Frontend router with catch-all (must be last)
+    app.include_router(frontend.router)
 
     return app
